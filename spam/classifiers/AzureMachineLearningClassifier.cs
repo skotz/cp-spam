@@ -87,7 +87,7 @@ namespace spam
                                 "message",
                                 new StringTable()
                                 {
-                                    ColumnNames = new string[] { "Col2" },
+                                    ColumnNames = new string[] { "message" },
                                     Values = values
                                 }
                             },
