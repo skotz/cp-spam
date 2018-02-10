@@ -12,19 +12,20 @@ using System.Threading.Tasks;
 
 namespace spam
 {
-    class AzureWS
+    class AzureMachineLearningClassifier : IClassifier
     {
         private string apikey;
-        private string endpoint = "https://ussouthcentral.services.azureml.net/workspaces/ede0b3ce4eb042b4952ebec217073d6f/services/85efe934beec479ab1323a47d3a17cfd/execute?api-version=2.0&details=true";
+        private string endpoint;
 
-        BackgroundWorker worker;
-        Stopwatch timer;
+        private BackgroundWorker worker;
+        private Stopwatch timer;
 
-        public EventHandler<ClassificationResult> OnMessageClassified;
+        public event EventHandler<List<ClassificationResult>> OnMessagesClassified;
 
-        public AzureWS(string azureApiKey)
+        public AzureMachineLearningClassifier(string azureApiKey, string azureEndpoint)
         {
             apikey = azureApiKey;
+            endpoint = azureEndpoint;
 
             worker = new BackgroundWorker();
             worker.DoWork += Worker_DoWork;
@@ -33,31 +34,51 @@ namespace spam
 
         private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
         {
-            OnMessageClassified?.Invoke(this, e.Result as ClassificationResult);
+            OnMessagesClassified?.Invoke(this, e.Result as List<ClassificationResult>);
         }
 
         private void Worker_DoWork(object sender, DoWorkEventArgs e)
         {
             AzureServiceRequest request = e.Argument as AzureServiceRequest;
-            e.Result = ClassifyMessage(request.Message);
+            e.Result = ClassifyMessages(request.Messages);
         }
 
-        public void ClassifyMesageAsync(string message)
+        public void ClassifyMessageAsync(string message)
         {
             if (!worker.IsBusy)
             {
-                worker.RunWorkerAsync(new AzureServiceRequest(message));
+                worker.RunWorkerAsync(new AzureServiceRequest(new List<string>() { message }));
+            }
+        }
+
+        public void ClassifyMessagesAsync(List<string> messages)
+        {
+            if (!worker.IsBusy)
+            {
+                worker.RunWorkerAsync(new AzureServiceRequest(messages));
             }
         }
 
         public ClassificationResult ClassifyMessage(string message)
         {
+            return ClassifyMessages(new List<string>() { message })[0];
+        }
+
+        public List<ClassificationResult> ClassifyMessages(List<string> messages)
+        {
             try
             {
+                List<ClassificationResult> classifications = new List<ClassificationResult>();
                 timer = Stopwatch.StartNew();
 
                 using (var client = new HttpClient())
                 {
+                    string[,] values = new string[messages.Count, 1];
+                    for (int i = 0; i<messages.Count; i++)
+                    {
+                        values[i, 0] = messages[i];
+                    }
+
                     var scoreRequest = new
                     {
                         Inputs = new Dictionary<string, StringTable>()
@@ -67,7 +88,7 @@ namespace spam
                                 new StringTable()
                                 {
                                     ColumnNames = new string[] { "Col2" },
-                                    Values = new string[,] {  { message },  }
+                                    Values = values
                                 }
                             },
                         },
@@ -86,7 +107,12 @@ namespace spam
                         string result = response.Content.ReadAsStringAsync().Result;
                         dynamic json = JsonConvert.DeserializeObject(result);
 
-                        return new ClassificationResult(json.Results.classification.value.Values[0][0].ToString(), timer.Elapsed);
+                        for (int i = 0; i < messages.Count; i++)
+                        {
+                            classifications.Add(new ClassificationResult(messages[i], json.Results.classification.value.Values[i][0].ToString(), timer.Elapsed));
+                        }
+
+                        return classifications;
                     }
                     else
                     {
@@ -99,28 +125,31 @@ namespace spam
                 File.AppendAllText("error.log", "Azure ML Request Failed: " + ex.Message + "\r\n");
             }
 
-            return null;
+            return new List<ClassificationResult>();
         }
     }
 
     public class AzureServiceRequest
     {
-        public string Message { get; set; }
+        public List<string> Messages { get; set; }
 
-        public AzureServiceRequest(string message)
+        public AzureServiceRequest(List<string> messages)
         {
-            Message = message;
+            Messages = messages;
         }
     }
 
     public class ClassificationResult
     {
+        public string Message { get; set; }
+
         public string Classification { get; set; }
 
         public TimeSpan ElapsedTime { get; set; }
 
-        public ClassificationResult(string classification, TimeSpan time)
+        public ClassificationResult(string message, string classification, TimeSpan time)
         {
+            Message = message;
             Classification = classification;
             ElapsedTime = time;
         }

@@ -35,12 +35,19 @@
             this.lblTime = new System.Windows.Forms.Label();
             this.ofdMessages = new System.Windows.Forms.OpenFileDialog();
             this.sfdClassified = new System.Windows.Forms.SaveFileDialog();
+            this.tabControl1 = new System.Windows.Forms.TabControl();
+            this.tabPage1 = new System.Windows.Forms.TabPage();
+            this.tabPage2 = new System.Windows.Forms.TabPage();
+            this.rtbScore = new System.Windows.Forms.RichTextBox();
             this.btnClassifyFile = new System.Windows.Forms.Button();
+            this.tabControl1.SuspendLayout();
+            this.tabPage1.SuspendLayout();
+            this.tabPage2.SuspendLayout();
             this.SuspendLayout();
             // 
             // rtbMessage
             // 
-            this.rtbMessage.Location = new System.Drawing.Point(12, 12);
+            this.rtbMessage.Location = new System.Drawing.Point(6, 6);
             this.rtbMessage.Name = "rtbMessage";
             this.rtbMessage.Size = new System.Drawing.Size(585, 322);
             this.rtbMessage.TabIndex = 0;
@@ -48,7 +55,7 @@
             // 
             // btnClassify
             // 
-            this.btnClassify.Location = new System.Drawing.Point(506, 340);
+            this.btnClassify.Location = new System.Drawing.Point(500, 334);
             this.btnClassify.Name = "btnClassify";
             this.btnClassify.Size = new System.Drawing.Size(91, 23);
             this.btnClassify.TabIndex = 1;
@@ -61,7 +68,7 @@
             this.lblClassification.AutoSize = true;
             this.lblClassification.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblClassification.ForeColor = System.Drawing.Color.Green;
-            this.lblClassification.Location = new System.Drawing.Point(12, 337);
+            this.lblClassification.Location = new System.Drawing.Point(6, 331);
             this.lblClassification.Name = "lblClassification";
             this.lblClassification.Size = new System.Drawing.Size(122, 24);
             this.lblClassification.TabIndex = 2;
@@ -72,7 +79,7 @@
             this.lblTime.AutoSize = true;
             this.lblTime.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.lblTime.ForeColor = System.Drawing.Color.Silver;
-            this.lblTime.Location = new System.Drawing.Point(168, 337);
+            this.lblTime.Location = new System.Drawing.Point(162, 331);
             this.lblTime.Name = "lblTime";
             this.lblTime.Size = new System.Drawing.Size(17, 24);
             this.lblTime.TabIndex = 3;
@@ -86,13 +93,58 @@
             // 
             this.sfdClassified.FileName = "classified.csv";
             // 
+            // tabControl1
+            // 
+            this.tabControl1.Controls.Add(this.tabPage1);
+            this.tabControl1.Controls.Add(this.tabPage2);
+            this.tabControl1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tabControl1.Location = new System.Drawing.Point(0, 0);
+            this.tabControl1.Name = "tabControl1";
+            this.tabControl1.SelectedIndex = 0;
+            this.tabControl1.Size = new System.Drawing.Size(604, 388);
+            this.tabControl1.TabIndex = 4;
+            // 
+            // tabPage1
+            // 
+            this.tabPage1.Controls.Add(this.rtbMessage);
+            this.tabPage1.Controls.Add(this.lblTime);
+            this.tabPage1.Controls.Add(this.btnClassify);
+            this.tabPage1.Controls.Add(this.lblClassification);
+            this.tabPage1.Location = new System.Drawing.Point(4, 22);
+            this.tabPage1.Name = "tabPage1";
+            this.tabPage1.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage1.Size = new System.Drawing.Size(596, 362);
+            this.tabPage1.TabIndex = 0;
+            this.tabPage1.Text = "Classify Message";
+            this.tabPage1.UseVisualStyleBackColor = true;
+            // 
+            // tabPage2
+            // 
+            this.tabPage2.Controls.Add(this.rtbScore);
+            this.tabPage2.Controls.Add(this.btnClassifyFile);
+            this.tabPage2.Location = new System.Drawing.Point(4, 22);
+            this.tabPage2.Name = "tabPage2";
+            this.tabPage2.Padding = new System.Windows.Forms.Padding(3);
+            this.tabPage2.Size = new System.Drawing.Size(596, 362);
+            this.tabPage2.TabIndex = 1;
+            this.tabPage2.Text = "Score Model";
+            this.tabPage2.UseVisualStyleBackColor = true;
+            // 
+            // rtbScore
+            // 
+            this.rtbScore.Location = new System.Drawing.Point(6, 6);
+            this.rtbScore.Name = "rtbScore";
+            this.rtbScore.Size = new System.Drawing.Size(584, 319);
+            this.rtbScore.TabIndex = 3;
+            this.rtbScore.Text = "";
+            // 
             // btnClassifyFile
             // 
-            this.btnClassifyFile.Location = new System.Drawing.Point(409, 340);
+            this.btnClassifyFile.Location = new System.Drawing.Point(499, 331);
             this.btnClassifyFile.Name = "btnClassifyFile";
             this.btnClassifyFile.Size = new System.Drawing.Size(91, 23);
-            this.btnClassifyFile.TabIndex = 1;
-            this.btnClassifyFile.Text = "Classify";
+            this.btnClassifyFile.TabIndex = 2;
+            this.btnClassifyFile.Text = "Score Model";
             this.btnClassifyFile.UseVisualStyleBackColor = true;
             this.btnClassifyFile.Click += new System.EventHandler(this.btnClassifyFile_Click);
             // 
@@ -100,17 +152,16 @@
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(609, 375);
-            this.Controls.Add(this.lblTime);
-            this.Controls.Add(this.lblClassification);
-            this.Controls.Add(this.btnClassifyFile);
-            this.Controls.Add(this.btnClassify);
-            this.Controls.Add(this.rtbMessage);
+            this.ClientSize = new System.Drawing.Size(604, 388);
+            this.Controls.Add(this.tabControl1);
             this.Name = "MainForm";
             this.Text = "Spam ML";
             this.Load += new System.EventHandler(this.MainForm_Load);
+            this.tabControl1.ResumeLayout(false);
+            this.tabPage1.ResumeLayout(false);
+            this.tabPage1.PerformLayout();
+            this.tabPage2.ResumeLayout(false);
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -122,7 +173,11 @@
         private System.Windows.Forms.Label lblTime;
         private System.Windows.Forms.OpenFileDialog ofdMessages;
         private System.Windows.Forms.SaveFileDialog sfdClassified;
+        private System.Windows.Forms.TabControl tabControl1;
+        private System.Windows.Forms.TabPage tabPage1;
+        private System.Windows.Forms.TabPage tabPage2;
         private System.Windows.Forms.Button btnClassifyFile;
+        private System.Windows.Forms.RichTextBox rtbScore;
     }
 }
 

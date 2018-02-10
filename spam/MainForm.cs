@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.Data;
 using System.Drawing;
 using System.IO;
@@ -13,7 +14,8 @@ namespace spam
 {
     public partial class MainForm : Form
     {
-        AzureWS ws;
+        AzureMachineLearningClassifier ws;
+        ClassifierValidator cv;
 
         public MainForm()
         {
@@ -34,26 +36,30 @@ namespace spam
             else
             {
                 string apikey = File.ReadAllText("api.key");
+                string endpoint = ConfigurationManager.AppSettings["AzureEndpoint"];
 
-                ws = new AzureWS(apikey);
-                ws.OnMessageClassified += OnMessageClassified;
+                ws = new AzureMachineLearningClassifier(apikey, endpoint);
+                ws.OnMessagesClassified += Ws_OnMessagesClassified;
+
+                cv = new ClassifierValidator(ws);
+                cv.OnClassifierScored += Cv_OnClassifierScored;
             }
         }
 
         private void btnClassify_Click(object sender, EventArgs e)
         {
-            ws.ClassifyMesageAsync(rtbMessage.Text);
+            ws.ClassifyMessageAsync(rtbMessage.Text);
 
             btnClassify.Enabled = false;
             lblTime.Text = "-";
         }
 
-        private void OnMessageClassified(object sender, ClassificationResult result)
+        private void Ws_OnMessagesClassified(object sender, List<ClassificationResult> e)
         {
-            if (result != null)
+            if (e.Count == 1)
             {
-                lblClassification.Text = result.Classification;
-                lblTime.Text = (int)result.ElapsedTime.TotalMilliseconds + "ms";
+                lblClassification.Text = e[0].Classification;
+                lblTime.Text = (int)e[0].ElapsedTime.TotalMilliseconds + "ms";
             }
             else
             {
@@ -69,19 +75,34 @@ namespace spam
             {
                 if (sfdClassified.ShowDialog() == DialogResult.OK)
                 {
-                    string[] messages = File.ReadAllLines(ofdMessages.FileName);
-                    using (StreamWriter w = new StreamWriter(sfdClassified.FileName))
-                    {
-                        foreach (string message in messages)
-                        {
-                            if (message.StartsWith("Ham") || message.StartsWith("Spam"))
-                            {
-                                // TODO: run all messages through the service, compare results to actual labels, and clean up the UI
-                            }
-                        }
-                    }
+                    cv.ScoreClassifierAsync(ofdMessages.FileName);
+
+                    btnClassifyFile.Enabled = false;
+                    rtbScore.Text = "Scoring classifier...";
                 }
             }
+        }
+
+        private void Cv_OnClassifierScored(object sender, ClassifierValidationResult e)
+        {
+            rtbScore.Text += "\r\nMessages: " + e.Total;
+            rtbScore.Text += "\r\nCorrect: " + e.Correct;
+            rtbScore.Text += "\r\nIncorrect: " + e.Wrong;
+            rtbScore.Text += "\r\nAccuracy: " + (e.Accuracy * 100).ToString("0.00") + "%";
+            rtbScore.Text += "\r\nTime: " + (int)e.ElapsedTime.TotalMilliseconds + "ms";
+            rtbScore.Text += "\r\nResults saved to " + sfdClassified.FileName;
+
+            using (StreamWriter w = new StreamWriter(sfdClassified.FileName))
+            {
+                w.WriteLine("Correct,Guess,Message");
+
+                foreach (LabeledMessage message in e.LabeledMessages)
+                {
+                    w.WriteLine(message.RealClassification + "," + message.ModelClassification + "," + message.Message);
+                }
+            }
+
+            btnClassifyFile.Enabled = true;
         }
     }
 }
