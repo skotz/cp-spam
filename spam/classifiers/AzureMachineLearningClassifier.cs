@@ -66,63 +66,56 @@ namespace spam
 
         public List<ClassificationResult> ClassifyMessages(List<string> messages)
         {
-            try
-            {
-                List<ClassificationResult> classifications = new List<ClassificationResult>();
-                timer = Stopwatch.StartNew();
+            List<ClassificationResult> classifications = new List<ClassificationResult>();
+            timer = Stopwatch.StartNew();
 
-                using (var client = new HttpClient())
+            using (var client = new HttpClient())
+            {
+                string[,] values = new string[messages.Count, 1];
+                for (int i = 0; i < messages.Count; i++)
                 {
-                    string[,] values = new string[messages.Count, 1];
-                    for (int i = 0; i<messages.Count; i++)
-                    {
-                        values[i, 0] = messages[i];
-                    }
-
-                    var scoreRequest = new
-                    {
-                        Inputs = new Dictionary<string, StringTable>()
-                        {
-                            {
-                                "message",
-                                new StringTable()
-                                {
-                                    ColumnNames = new string[] { "message" },
-                                    Values = values
-                                }
-                            },
-                        },
-                        GlobalParameters = new Dictionary<string, string>()
-                        {
-                        }
-                    };
-
-                    client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apikey);
-                    client.BaseAddress = new Uri(endpoint);
-
-                    HttpResponseMessage response = client.PostAsJsonAsync("", scoreRequest).Result;
-
-                    if (response.IsSuccessStatusCode)
-                    {
-                        string result = response.Content.ReadAsStringAsync().Result;
-                        dynamic json = JsonConvert.DeserializeObject(result);
-
-                        for (int i = 0; i < messages.Count; i++)
-                        {
-                            classifications.Add(new ClassificationResult(messages[i], json.Results.classification.value.Values[i][0].ToString(), timer.Elapsed));
-                        }
-
-                        return classifications;
-                    }
-                    else
-                    {
-                        File.AppendAllText("error.log", "Azure ML Request Failed: " + response.StatusCode + "\r\n");
-                    }
+                    values[i, 0] = messages[i];
                 }
-            }
-            catch (Exception ex)
-            {
-                File.AppendAllText("error.log", "Azure ML Request Failed: " + ex.Message + "\r\n");
+
+                var scoreRequest = new
+                {
+                    Inputs = new Dictionary<string, StringTable>()
+                    {
+                        {
+                            "message",
+                            new StringTable()
+                            {
+                                ColumnNames = new string[] { "message" },
+                                Values = values
+                            }
+                        },
+                    },
+                    GlobalParameters = new Dictionary<string, string>()
+                    {
+                    }
+                };
+
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apikey);
+                client.BaseAddress = new Uri(endpoint);
+
+                HttpResponseMessage response = client.PostAsJsonAsync("", scoreRequest).Result;
+
+                if (response.IsSuccessStatusCode)
+                {
+                    string result = response.Content.ReadAsStringAsync().Result;
+                    dynamic json = JsonConvert.DeserializeObject(result);
+
+                    for (int i = 0; i < messages.Count; i++)
+                    {
+                        classifications.Add(new ClassificationResult(messages[i], json.Results.classification.value.Values[i][0].ToString(), timer.Elapsed));
+                    }
+
+                    return classifications;
+                }
+                else
+                {
+                    File.AppendAllText("error.log", "Azure ML Request Failed: " + response.StatusCode + "\r\n");
+                }
             }
 
             return new List<ClassificationResult>();
