@@ -143,7 +143,8 @@
             this.rtbScore.Name = "rtbScore";
             this.rtbScore.Size = new System.Drawing.Size(584, 319);
             this.rtbScore.TabIndex = 3;
-            this.rtbScore.Text = "";
+            this.rtbScore.Text = "Click \"begin\" to...\n   1) Select a labeled dataset file to score the tained model" +
+    " on\n   2) Select a location to save the results";
             // 
             // btnClassifyFile
             // 
@@ -173,7 +174,8 @@
             this.rtbScoreWord.Name = "rtbScoreWord";
             this.rtbScoreWord.Size = new System.Drawing.Size(580, 300);
             this.rtbScoreWord.TabIndex = 2;
-            this.rtbScoreWord.Text = "";
+            this.rtbScoreWord.Text = "Click \"begin\" to...\n   1) Select a labeled dataset file to train on\n   2) Select " +
+    "a labeled dataset file to score the trained model on";
             // 
             // btnWord
             // 
