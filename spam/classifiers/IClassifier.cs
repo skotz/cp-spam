@@ -18,4 +18,20 @@ namespace spam
 
         List<ClassificationResult> ClassifyMessages(List<string> messages);
     }
+
+    public class ClassificationResult
+    {
+        public string Message { get; set; }
+
+        public string Classification { get; set; }
+
+        public TimeSpan ElapsedTime { get; set; }
+
+        public ClassificationResult(string message, string classification, TimeSpan time)
+        {
+            Message = message;
+            Classification = classification;
+            ElapsedTime = time;
+        }
+    }
 }

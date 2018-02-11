@@ -63,6 +63,7 @@
     </Compile>
     <Compile Include="classifiers\AzureMachineLearningClassifier.cs" />
     <Compile Include="classifiers\IClassifier.cs" />
+    <Compile Include="classifiers\WordSearchClassifier.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>

@@ -14,12 +14,20 @@ namespace spam
 {
     public partial class MainForm : Form
     {
-        AzureMachineLearningClassifier ws;
-        ClassifierValidator cv;
+        AzureMachineLearningClassifier azure;
+        ClassifierValidator cvAzure;
+
+        WordSearchClassifier word;
+        ClassifierValidator cvWord;
 
         public MainForm()
         {
             InitializeComponent();
+
+            word = new WordSearchClassifier();
+
+            cvWord = new ClassifierValidator(word);
+            cvWord.OnClassifierScored += CvWord_OnClassifierScored;
         }
 
         private void MainForm_Load(object sender, EventArgs e)
@@ -38,17 +46,17 @@ namespace spam
                 string apikey = File.ReadAllText("api.key");
                 string endpoint = ConfigurationManager.AppSettings["AzureEndpoint"];
 
-                ws = new AzureMachineLearningClassifier(apikey, endpoint);
-                ws.OnMessagesClassified += Ws_OnMessagesClassified;
+                azure = new AzureMachineLearningClassifier(apikey, endpoint);
+                azure.OnMessagesClassified += Ws_OnMessagesClassified;
 
-                cv = new ClassifierValidator(ws);
-                cv.OnClassifierScored += Cv_OnClassifierScored;
+                cvAzure = new ClassifierValidator(azure);
+                cvAzure.OnClassifierScored += Cv_OnClassifierScored;
             }
         }
 
         private void btnClassify_Click(object sender, EventArgs e)
         {
-            ws.ClassifyMessageAsync(rtbMessage.Text);
+            azure.ClassifyMessageAsync(rtbMessage.Text);
 
             btnClassify.Enabled = false;
             lblTime.Text = "-";
@@ -75,7 +83,7 @@ namespace spam
             {
                 if (sfdClassified.ShowDialog() == DialogResult.OK)
                 {
-                    cv.ScoreClassifierAsync(ofdMessages.FileName);
+                    cvAzure.ScoreClassifierAsync(ofdMessages.FileName);
 
                     btnClassifyFile.Enabled = false;
                     rtbScore.Text = "Scoring classifier...";
@@ -103,6 +111,33 @@ namespace spam
             }
 
             btnClassifyFile.Enabled = true;
+        }
+
+        private void btnWord_Click(object sender, EventArgs e)
+        {
+            if (ofdTrainingData.ShowDialog() == DialogResult.OK)
+            {
+                if (ofdMessages.ShowDialog() == DialogResult.OK)
+                {
+                    word.Train(ofdTrainingData.FileName);
+                    cvWord.ScoreClassifierAsync(ofdMessages.FileName);
+
+                    btnWord.Enabled = false;
+                    rtbScore.Text = "Scoring classifier...";
+                }
+            }
+        }
+
+        private void CvWord_OnClassifierScored(object sender, ClassifierValidationResult e)
+        {
+            rtbScoreWord.Text += "\r\nMessages: " + e.Total;
+            rtbScoreWord.Text += "\r\nCorrect: " + e.Correct;
+            rtbScoreWord.Text += "\r\nIncorrect: " + e.Wrong;
+            rtbScoreWord.Text += "\r\nAccuracy: " + (e.Accuracy * 100).ToString("0.00") + "%";
+            rtbScoreWord.Text += "\r\nTime: " + (int)e.ElapsedTime.TotalMilliseconds + "ms";
+            rtbScoreWord.Text += "\r\nResults saved to " + sfdClassified.FileName;
+
+            btnWord.Enabled = true;
         }
     }
 }

@@ -139,22 +139,6 @@ namespace spam
         }
     }
 
-    public class ClassificationResult
-    {
-        public string Message { get; set; }
-
-        public string Classification { get; set; }
-
-        public TimeSpan ElapsedTime { get; set; }
-
-        public ClassificationResult(string message, string classification, TimeSpan time)
-        {
-            Message = message;
-            Classification = classification;
-            ElapsedTime = time;
-        }
-    }
-
     public class StringTable
     {
         public string[] ColumnNames { get; set; }
