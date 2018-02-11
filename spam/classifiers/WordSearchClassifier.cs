@@ -63,7 +63,7 @@ namespace spam
         {
             List<ClassificationResult> classifications = new List<ClassificationResult>();
             timer = Stopwatch.StartNew();
-            
+
             for (int i = 0; i < messages.Count; i++)
             {
                 string prediction = RunModel(messages[i]);
@@ -80,33 +80,42 @@ namespace spam
         {
             bigrams = new Dictionary<string, int>();
             hamCutover = 0;
-            string[] messages = File.ReadAllLines(trainingFile);
+            string[] trainingData = File.ReadAllLines(trainingFile);
+            List<LabeledMessage> messages = new List<LabeledMessage>();
+
+            // Read all the messages
+            foreach (string line in trainingData)
+            {
+                if (line.StartsWith("Ham") || line.StartsWith("Spam"))
+                {
+                    string[] data = line.Split(new char[] { ',' }, 2);
+                    messages.Add(new LabeledMessage(data[0], data[1]));
+                }
+            }
 
             // For each distinct bigram across the training set, keep a running total of the number of times it appears in Ham messages as opposed to Spam
-            foreach (string message in messages)
+            foreach (LabeledMessage message in messages)
             {
-                if (message.StartsWith("Ham") || message.StartsWith("Spam"))
+                string[] words = ParseBigrams(CleanMessage(message.Message));
+
+                foreach (string word in words)
                 {
-                    string[] data = message.Split(new char[] { ',' }, 2);
-                    string classification = data[0];
-                    string[] words = ParseBigrams(CleanMessage(data[1]));
-                    
-                    foreach (string word in words)
+                    if (bigrams.ContainsKey(word))
                     {
-                        if (bigrams.ContainsKey(word))
-                        {
-                            bigrams[word] += classification == "Ham" ? 1 : -1;
-                        }
-                        else
-                        {
-                            bigrams.Add(word, classification == "Ham" ? 1 : -1);
-                        }
+                        bigrams[word] += message.RealClassification == "Ham" ? 1 : -1;
+                    }
+                    else
+                    {
+                        bigrams.Add(word, message.RealClassification == "Ham" ? 1 : -1);
                     }
                 }
             }
 
+            // For fun
+            // GetBuckets(messages, 20);
+
             // Calculate the average cutover point where the summation of bigram occurrences switches from a Ham prediction to Spam
-            hamCutover = messages.Select(x => GetScore(x)).Average();
+            hamCutover = messages.Select(x => GetScore(x.Message)).Average();
         }
 
         private string RunModel(string message)
@@ -128,6 +137,48 @@ namespace spam
             }
 
             return score / messageBigrams.Length;
+        }
+
+        private Dictionary<string, int[]> GetBuckets(List<LabeledMessage> messages, int numBuckets)
+        {
+            List<double> allScores = messages.Select(x => GetScore(x.Message)).ToList();
+            double min = allScores.Min();
+            double max = allScores.Max();
+            double bucketSize = (max - min) / numBuckets;
+
+            int[] hamHistogram = new int[numBuckets];
+            int[] spamHistogram = new int[numBuckets];
+
+            foreach (LabeledMessage message in messages)
+            {
+                double score = GetScore(message.Message);
+                int bucketIndex = (int)Math.Min(Math.Floor((score - min) / bucketSize), numBuckets - 1);
+
+                if (message.RealClassification == "Ham")
+                {
+                    hamHistogram[bucketIndex]++;
+                }
+                else
+                {
+                    spamHistogram[bucketIndex]++;
+                }
+            }
+
+            Dictionary<string, int[]> classBuckets = new Dictionary<string, int[]>();
+            classBuckets.Add("Ham", hamHistogram);
+            classBuckets.Add("Spam", spamHistogram);
+
+            using (StreamWriter w = new StreamWriter("hist.csv"))
+            {
+                w.WriteLine("Bucket,Ham,Spam");
+                for (int i = 0; i < numBuckets; i++)
+                {
+                    double bucket = min + bucketSize * i;
+                    w.WriteLine(bucket + "," + hamHistogram[i] + "," + spamHistogram[i]);
+                }
+            }
+
+            return classBuckets;
         }
 
         private string[] ParseBigrams(string[] words)
